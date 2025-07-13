@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Builder Adventure</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff; /* Light blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #game-container {
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative; /* For loading overlay */
+            overflow: hidden; /* Ensure rounded corners clip content */
+        }
+        .chapter-section {
+            display: none; /* Hidden by default */
+        }
+        .chapter-section.active {
+            display: block; /* Shown when active */
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 2px solid #a78bfa; /* Purple border */
+            border-radius: 10px;
+            font-size: 1.1rem;
+            resize: vertical; /* Allow vertical resizing */
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        }
+        button {
+            background-color: #8b5cf6; /* Vibrant purple */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #7c3aed; /* Darker purple on hover */
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e7ff; /* Light blue background for progress bar */
+            border-radius: 10px;
+            height: 20px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #8b5cf6; /* Purple progress */
+            border-radius: 10px;
+            transition: width 0.5s ease-in-out;
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px; /* Match container */
+            z-index: 10;
+        }
+        .spinner {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #8b5cf6; /* Purple */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .story-display {
+            text-align: left;
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px dashed #a78bfa;
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+            word-wrap: break-word; /* Break long words */
+        }
+        .story-display h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #4c1d95; /* Dark purple */
+            margin-bottom: 15px;
+        }
+        .story-display p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .hint-box {
+            background-color: #eef2ff; /* Very light purple */
+            border-left: 5px solid #a78bfa;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.95rem;
+            color: #4c1d95;
+        }
+        .hint-box strong {
+            color: #6d28d9;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p class="mt-4 text-lg text-purple-700">Sparky is thinking...</p>
+        </div>
+
+        <div id="intro-screen" class="chapter-section active">
+            <h1 class="text-4xl font-bold text-purple-800 mb-6">Welcome to Story Builder Adventure!</h1>
+            <img src="https://placehold.co/150x150/a78bfa/ffffff?text=Sparky" alt="Story Sparky character" class="mx-auto mb-6 rounded-full shadow-lg">
+            <p class="text-lg text-gray-700 mb-8">
+                Hi! I'm Sparky, your story-building robot! I need your help to create an amazing adventure.
+                We'll build a story together, step by step. Are you ready to be a super storyteller?
+            </p>
+            <button id="start-game-btn">Let's Start Our Story!</button>
+        </div>
+
+        <div id="game-sections" class="hidden">
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <!-- Chapter 1: The Beginning (Exposition) -->
+            <div id="chapter-1" class="chapter-section">
+                <h2 class="text-3xl font-semibold text-purple-700 mb-4">Chapter 1: The Beginning</h2>
+                <p class="text-lg text-gray-600 mb-4">Every great story needs a start! Let's introduce our character and where they are.</p>
+                <div class="hint-box">
+                    <strong>Hint:</strong> Think about:
+                    <ul>
+                        <li>Who is your character? (e.g., a brave knight, a curious cat, a friendly alien)</li>
+                        <li>Where are they? (e.g., a magical forest, a cozy treehouse, a bustling city)</li>
+                        <li>What are they doing?</li>
+                    </ul>
+                </div>
+                <p id="beginning-prompt" class="text-xl text-purple-800 font-medium mt-6 mb-4">Sparky says: "Imagine a..."</p>
+                <textarea id="beginning-text" placeholder="Start writing your amazing story here..."></textarea>
+                <button id="next-chapter-1">Next: The Problem!</button>
+            </div>
+
+            <!-- Chapter 2: The Problem (Rising Action) -->
+            <div id="chapter-2" class="chapter-section">
+                <h2 class="text-3xl font-semibold text-purple-700 mb-4">Chapter 2: The Problem</h2>
+                <p class="text-lg text-gray-600 mb-4">Oh no! Every story needs a problem or a challenge. What happens to your character?</p>
+                <div class="hint-box">
+                    <strong>Hint:</strong> Use a **transition word** to show time passing or a new event starting!
+                    <p id="transition-words-hint" class="font-bold mt-2">Some ideas: *Suddenly, One day, Then, Next, After a while*</p>
+                </div>
+                <p id="problem-prompt" class="text-xl text-purple-800 font-medium mt-6 mb-4">Sparky says: "What trouble does your character find?"</p>
+                <textarea id="problem-text" placeholder="What problem does your character face?"></textarea>
+                <button id="next-chapter-2">Next: The Big Moment!</button>
+            </div>
+
+            <!-- Chapter 3: The Big Moment (Climax) -->
+            <div id="chapter-3" class="chapter-section">
+                <h2 class="text-3xl font-semibold text-purple-700 mb-4">Chapter 3: The Big Moment</h2>
+                <p class="text-lg text-gray-600 mb-4">This is the most exciting part! What happens when your character tries to solve the problem?</p>
+                <div class="hint-box">
+                    <strong>Hint:</strong> Add some **dialogue**! What do your characters say? Remember to use quotation marks " " around what they say.
+                    <p id="dialogue-example-hint" class="font-bold mt-2">Example: 'Help!' cried the little bird. 'I'm coming!' shouted the brave cat.</p>
+                </div>
+                <p id="climax-prompt" class="text-xl text-purple-800 font-medium mt-6 mb-4">Sparky says: "What's the most exciting thing that happens?"</p>
+                <textarea id="climax-text" placeholder="Write the most exciting part of your story, and don't forget dialogue!"></textarea>
+                <button id="next-chapter-3">Next: Solving It!</button>
+            </div>
+
+            <!-- Chapter 4: Solving It (Falling Action) -->
+            <div id="chapter-4" class="chapter-section">
+                <h2 class="text-3xl font-semibold text-purple-700 mb-4">Chapter 4: Solving It</h2>
+                <p class="text-lg text-gray-600 mb-4">How does your character start to solve the problem? What steps do they take?</p>
+                <div class="hint-box">
+                    <strong>Hint:</strong> Use another **transition word** to show the story moving towards the end!
+                    <p id="transition-words-hint-2" class="font-bold mt-2">Some ideas: *After that, Slowly, Carefully, Finally, With help*</p>
+                </div>
+                <p id="falling-action-prompt" class="text-xl text-purple-800 font-medium mt-6 mb-4">Sparky says: "How does the problem start to get fixed?"</p>
+                <textarea id="falling-action-text" placeholder="Write about how the problem starts to be solved."></textarea>
+                <button id="next-chapter-4">Next: The End!</button>
+            </div>
+
+            <!-- Chapter 5: The End (Resolution) -->
+            <div id="chapter-5" class="chapter-section">
+                <h2 class="text-3xl font-semibold text-purple-700 mb-4">Chapter 5: The End</h2>
+                <p class="text-lg text-gray-600 mb-4">Every story needs a good ending! How does your story wrap up?</p>
+                <div class="hint-box">
+                    <strong>Hint:</strong> Think about:
+                    <ul>
+                        <li>What happens to the character at the very end?</li>
+                        <li>How do they feel?</li>
+                        <li>What did they learn?</li>
+                    </ul>
+                </div>
+                <p id="end-prompt" class="text-xl text-purple-800 font-medium mt-6 mb-4">Sparky says: "How does your story finish?"</p>
+                <textarea id="end-text" placeholder="Write the ending of your story."></textarea>
+                <button id="finish-story-btn">Finish My Story!</button>
+            </div>
+
+            <!-- Story Review/Completion Screen -->
+            <div id="story-review-screen" class="chapter-section">
+                <h2 class="text-3xl font-semibold text-purple-700 mb-4">Your Amazing Story!</h2>
+                <p class="text-lg text-gray-600 mb-4">Wow, you did it! Read your whole story below!</p>
+                <div id="full-story-display" class="story-display">
+                    <h3>Your Story:</h3>
+                    <!-- Story parts will be inserted here by JavaScript -->
+                </div>
+                <p class="text-xl text-purple-800 font-medium mt-6 mb-4">Great job, Storyteller! You built an awesome story!</p>
+                <button id="copy-story-btn" class="mr-4">Copy Story</button>
+                <button id="new-story-btn">Start a New Story</button>
+                <p id="copy-message" class="text-sm text-green-600 mt-2 hidden">Story copied to clipboard!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for Firebase (will be provided by the Canvas environment)
+        // For local development, you might set these to dummy values or remove them if not using Firestore.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Game state variables
+        let currentChapter = 0;
+        const totalChapters = 5; // Beginning, Problem, Climax, Falling Action, End
+        const storyParts = {
+            beginning: "",
+            problem: "",
+            climax: "",
+            fallingAction: "",
+            end: ""
+        };
+
+        // DOM Elements
+        const introScreen = document.getElementById('intro-screen');
+        const gameSections = document.getElementById('game-sections');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        const chapters = [
+            document.getElementById('chapter-1'),
+            document.getElementById('chapter-2'),
+            document.getElementById('chapter-3'),
+            document.getElementById('chapter-4'),
+            document.getElementById('chapter-5')
+        ];
+
+        const textareas = {
+            beginning: document.getElementById('beginning-text'),
+            problem: document.getElementById('problem-text'),
+            climax: document.getElementById('climax-text'),
+            fallingAction: document.getElementById('falling-action-text'),
+            end: document.getElementById('end-text')
+        };
+
+        const nextButtons = [
+            document.getElementById('next-chapter-1'),
+            document.getElementById('next-chapter-2'),
+            document.getElementById('next-chapter-3'),
+            document.getElementById('next-chapter-4')
+        ];
+        const finishStoryBtn = document.getElementById('finish-story-btn');
+        const storyReviewScreen = document.getElementById('story-review-screen');
+        const fullStoryDisplay = document.getElementById('full-story-display');
+        const copyStoryBtn = document.getElementById('copy-story-btn');
+        const newStoryBtn = document.getElementById('new-story-btn');
+        const copyMessage = document.getElementById('copy-message');
+
+        // LLM related elements
+        const beginningPromptEl = document.getElementById('beginning-prompt');
+        const problemPromptEl = document.getElementById('problem-prompt');
+        const climaxPromptEl = document.getElementById('climax-prompt');
+        const fallingActionPromptEl = document.getElementById('falling-action-prompt');
+        const endPromptEl = document.getElementById('end-prompt');
+        const transitionWordsHintEl = document.getElementById('transition-words-hint');
+        const transitionWordsHint2El = document.getElementById('transition-words-hint-2');
+        const dialogueExampleHintEl = document.getElementById('dialogue-example-hint');
+
+        // --- LLM Interaction Functions ---
+        async function callGeminiAPI(prompt, schema = null) {
+            loadingOverlay.classList.remove('hidden'); // Show loading spinner
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = { contents: chatHistory };
+            if (schema) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: schema
+                };
+            }
+
+            const apiKey = ""; // Canvas will provide this at runtime
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    return schema ? JSON.parse(text) : text;
+                } else {
+                    console.error("Gemini API returned an unexpected structure:", result);
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                return null;
+            } finally {
+                loadingOverlay.classList.add('hidden'); // Hide loading spinner
+            }
+        }
+
+        async function generatePrompt(type) {
+            let promptText = "";
+            let defaultPrompt = "";
+            let result = null;
+
+            switch (type) {
+                case 'beginning':
+                    promptText = "Generate 3 simple, kid-friendly ideas for a story character (e.g., an animal, a magical creature, a person with a special hobby). Provide just the name/type and one small detail. Format as a JSON array of strings.";
+                    defaultPrompt = "Imagine a brave knight in a tall castle...";
+                    result = await callGeminiAPI(promptText, {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    });
+                    if (result && result.length > 0) {
+                        const idea = result[Math.floor(Math.random() * result.length)];
+                        return `Imagine: ${idea}`;
+                    }
+                    break;
+                case 'problem':
+                    promptText = "Generate 3 simple, kid-friendly ideas for a small problem a character might face in a Grade 2 story (e.g., losing something, a pet running away, needing to build something). Format as a JSON array of strings.";
+                    defaultPrompt = "What trouble does your character find?";
+                    result = await callGeminiAPI(promptText, {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    });
+                    if (result && result.length > 0) {
+                        const idea = result[Math.floor(Math.random() * result.length)];
+                        return `Oh no! ${idea}`;
+                    }
+                    break;
+                case 'climax':
+                    promptText = "Generate 3 simple, kid-friendly ideas for the most exciting part of a Grade 2 story, where the character tries to solve their problem. Format as a JSON array of strings.";
+                    defaultPrompt = "What's the most exciting thing that happens?";
+                    result = await callGeminiAPI(promptText, {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    });
+                    if (result && result.length > 0) {
+                        const idea = result[Math.floor(Math.random() * result.length)];
+                        return `The big moment! ${idea}`;
+                    }
+                    break;
+                case 'fallingAction':
+                    promptText = "Generate 3 simple, kid-friendly ideas for how a character starts to solve their problem in a Grade 2 story. Format as a JSON array of strings.";
+                    defaultPrompt = "How does the problem start to get fixed?";
+                    result = await callGeminiAPI(promptText, {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    });
+                    if (result && result.length > 0) {
+                        const idea = result[Math.floor(Math.random() * result.length)];
+                        return `Getting closer to the end: ${idea}`;
+                    }
+                    break;
+                case 'end':
+                    promptText = "Generate 3 simple, kid-friendly ideas for how a Grade 2 story might end (e.g., happy ending, character learns something, problem is fully solved). Format as a JSON array of strings.";
+                    defaultPrompt = "How does your story finish?";
+                    result = await callGeminiAPI(promptText, {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    });
+                    if (result && result.length > 0) {
+                        const idea = result[Math.floor(Math.random() * result.length)];
+                        return `The very end: ${idea}`;
+                    }
+                    break;
+                case 'transitionWords':
+                    promptText = "List 8 simple transition words suitable for a Grade 2 narrative (e.g., first, next, then, after, finally, suddenly, later, soon). Format as a JSON array of strings.";
+                    defaultPrompt = "*Suddenly, One day, Then, Next, After a while*";
+                    result = await callGeminiAPI(promptText, {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    });
+                    if (result && result.length > 0) {
+                        return result.map(word => `*${word.trim()}*`).join(', ');
+                    }
+                    break;
+                case 'dialogueExample':
+                    promptText = "Give a very simple example of dialogue between two characters for a Grade 2 story, showing who is speaking. Ensure it's very short and clear. Example: 'Hello!' said Tim. 'Hi there!' replied Sue. Format as a single string.";
+                    defaultPrompt = "'Help!' cried the little bird. 'I'm coming!' shouted the brave cat.";
+                    result = await callGeminiAPI(promptText);
+                    if (result) {
+                        return result;
+                    }
+                    break;
+            }
+            return defaultPrompt; // Fallback if API fails or no result
+        }
+
+        // --- Game Logic Functions ---
+
+        function updateProgressBar() {
+            const progress = (currentChapter / totalChapters) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function showChapter(chapterIndex) {
+            chapters.forEach((chapter, index) => {
+                if (index === chapterIndex) {
+                    chapter.classList.add('active');
+                } else {
+                    chapter.classList.remove('active');
+                }
+            });
+            updateProgressBar();
+        }
+
+        async function loadChapterContent(chapterIndex) {
+            // Dynamically load prompts and hints for each chapter
+            switch (chapterIndex) {
+                case 0: // Beginning
+                    beginningPromptEl.textContent = `Sparky says: "${await generatePrompt('beginning')}"`;
+                    break;
+                case 1: // Problem
+                    problemPromptEl.textContent = `Sparky says: "${await generatePrompt('problem')}"`;
+                    transitionWordsHintEl.innerHTML = `Some ideas: ${await generatePrompt('transitionWords')}`;
+                    break;
+                case 2: // Climax
+                    climaxPromptEl.textContent = `Sparky says: "${await generatePrompt('climax')}"`;
+                    dialogueExampleHintEl.innerHTML = `Example: ${await generatePrompt('dialogueExample')}`;
+                    break;
+                case 3: // Falling Action
+                    fallingActionPromptEl.textContent = `Sparky says: "${await generatePrompt('fallingAction')}"`;
+                    transitionWordsHint2El.innerHTML = `Some ideas: ${await generatePrompt('transitionWords')}`;
+                    break;
+                case 4: // End
+                    endPromptEl.textContent = `Sparky says: "${await generatePrompt('end')}"`;
+                    break;
+            }
+        }
+
+        async function goToNextChapter() {
+            // Save current chapter's text
+            switch (currentChapter) {
+                case 0: storyParts.beginning = textareas.beginning.value; break;
+                case 1: storyParts.problem = textareas.problem.value; break;
+                case 2: storyParts.climax = textareas.climax.value; break;
+                case 3: storyParts.fallingAction = textareas.fallingAction.value; break;
+                case 4: storyParts.end = textareas.end.value; break;
+            }
+
+            currentChapter++;
+            if (currentChapter < totalChapters) {
+                showChapter(currentChapter);
+                await loadChapterContent(currentChapter); // Load content for the new chapter
+            } else {
+                // All chapters complete, show review screen
+                showStoryReview();
+            }
+        }
+
+        function showStoryReview() {
+            chapters.forEach(chapter => chapter.classList.remove('active')); // Hide all chapters
+            storyReviewScreen.classList.add('active'); // Show review screen
+            gameSections.classList.add('hidden'); // Hide game sections container
+
+            let fullStoryHTML = `
+                <p><strong>Beginning:</strong> ${storyParts.beginning || 'No beginning written.'}</p>
+                <p><strong>Problem:</strong> ${storyParts.problem || 'No problem written.'}</p>
+                <p><strong>Big Moment:</strong> ${storyParts.climax || 'No big moment written.'}</p>
+                <p><strong>Solving It:</strong> ${storyParts.fallingAction || 'No solution written.'}</p>
+                <p><strong>The End:</strong> ${storyParts.end || 'No ending written.'}</p>
+            `;
+            fullStoryDisplay.innerHTML = `<h3>Your Story:</h3>${fullStoryHTML}`;
+        }
+
+        function copyStoryToClipboard() {
+            const storyText = `
+Your Amazing Story!
+
+Beginning: ${storyParts.beginning}
+Problem: ${storyParts.problem}
+Big Moment: ${storyParts.climax}
+Solving It: ${storyParts.fallingAction}
+The End: ${storyParts.end}
+            `.trim();
+
+            // Use document.execCommand('copy') for better iframe compatibility
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = storyText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    copyMessage.classList.remove('hidden');
+                    setTimeout(() => copyMessage.classList.add('hidden'), 2000);
+                } else {
+                    console.error('Copy command was unsuccessful.');
+                }
+            } catch (err) {
+                console.error('Oops, unable to copy', err);
+            }
+            document.body.removeChild(tempTextArea);
+        }
+
+        function resetGame() {
+            currentChapter = 0;
+            for (const key in storyParts) {
+                storyParts[key] = "";
+            }
+            for (const key in textareas) {
+                textareas[key].value = "";
+            }
+            introScreen.classList.add('active');
+            gameSections.classList.add('hidden');
+            storyReviewScreen.classList.remove('active');
+            updateProgressBar(); // Reset progress bar
+        }
+
+        // --- Event Listeners ---
+        startGameBtn.addEventListener('click', async () => {
+            introScreen.classList.remove('active');
+            gameSections.classList.remove('hidden');
+            showChapter(currentChapter);
+            await loadChapterContent(currentChapter);
+        });
+
+        nextButtons.forEach(button => {
+            button.addEventListener('click', goToNextChapter);
+        });
+
+        finishStoryBtn.addEventListener('click', goToNextChapter); // Last next button leads to review
+
+        copyStoryBtn.addEventListener('click', copyStoryToClipboard);
+        newStoryBtn.addEventListener('click', resetGame);
+
+        // Initial setup on page load (optional, could be part of startGameBtn)
+        // window.onload = () => {
+        //     updateProgressBar();
+        // };
+    </script>
+</body>
+</html>
